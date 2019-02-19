@@ -28,7 +28,8 @@ IEC Reference Foundation Overview
 
 This document provides a general description about the reference foundation of IEC.
 The Integrated Edge Cloud (IEC) will enable new functionalities and business models
-on the network edge. The benefits of running applications on the network edge are
+on the network edge. The benefits of running applications on the network edge are:
+
 - Better latencies for end users
 - Less load on network since more data can be processed locally
 - Fully utilize the computation power of the edge devices
@@ -58,28 +59,23 @@ Install Docker as Prerequisite
 
 Docker_ is used for Kuberntes docker images management. The installation script for docker
 version 18.06 is given below. More docker install information can be found in the install_
-guide::
-    DOCKER_VERSION=18.06.1
-    ARCH=arm64
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-    sudo apt-key fingerprint 0EBFCD88
-    sudo add-apt-repository \
-     "deb [arch=${ARCH}] https://download.docker.com/linux/ubuntu \
-     $(lsb_release -cs) \
-     stable"
-    sudo apt-get update
-    sudo apt-get install -y docker-ce=${DOCKER_VERSION}~ce~3-0~ubuntu
+guide:
 
+.. literalinclude:: scripts/k8s_common.sh
+    :language: bash
+    :lines: 3-
+    :end-before: Disable swap
 
 Disable swap on your machine
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Turn off all swap devices and files with::
+Turn off all swap devices and files with:
 
-   sudo swapoff -a
+.. code-block:: bash
+
+    sudo swapoff -a
 
 .. _kubeadm: https://kubernetes.io/docs/setup/independent/create-cluster-kubeadm/
-
 
 Install Kubernetes with Kubeadm
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -91,48 +87,55 @@ Usually the current host(edge server/gateway)'s management interface is chosen a
 the Kubeapi-server advertise address which is indicated here as ``$MGMT_IP``.
 
 The common installation steps for both Kubernetes master and slave node are given
-as Linux shell scripts::
+as Linux shell scripts:
 
-   sudo bash
-   apt-get update && apt-get install -y apt-transport-https curl
-   curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
-   cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
-   deb https://apt.kubernetes.io/ kubernetes-xenial main
-   EOF
-   apt-get update
-   apt-get install -y kubelet=1.13.0-00 kubeadm=1.13.0-00 kubectl=1.13.0-00
-   apt-mark hold kubelet kubeadm kubectl
-   sysctl net.bridge.bridge-nf-call-iptables=1
+.. literalinclude:: scripts/k8s_common.sh
+    :language: bash
+    :lines: 3-
+    :start-after: Install Kubernetes
 
-For host setup as Kubernetes `master`::
+For host setup as Kubernetes `master`:
 
-   sudo kubeadm config images pull
-   sudo kubeadm init --pod-network-cidr=192.168.0.0/16 --apiserver-advertise-address=$MGMT_IP \
-   --service-cidr=172.16.1.0/24
+.. code-block:: bash
 
-To start using your cluster, you need to run (as a regular user)::
+    sudo kubeadm config images pull
+    sudo kubeadm init --pod-network-cidr=192.168.0.0/16 --apiserver-advertise-address=$MGMT_IP \
+    --service-cidr=172.16.1.0/24
 
-   mkdir -p $HOME/.kube
-   sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-   sudo chown $(id -u):$(id -g) $HOME/.kube/config
+To start using your cluster, you need to run (as a regular user):
 
-or if you are the ``root`` user::
+.. code-block:: bash
 
-   export KUBECONFIG=/etc/kubernetes/admin.conf
+    mkdir -p $HOME/.kube
+    sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+    sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
-For hosts setup as Kubernetes `slave`::
+or if you are the ``root`` user:
 
-   kubeadm join --token <token> <master-ip>:6443 --discovery-token-ca-cert-hash sha256:<hash>
+.. code-block:: bash
+
+    export KUBECONFIG=/etc/kubernetes/admin.conf
+
+For hosts setup as Kubernetes `slave`:
+
+.. code-block:: bash
+
+    kubeadm join --token <token> <master-ip>:6443 --discovery-token-ca-cert-hash sha256:<hash>
 
 in which the token is given in the master's ``kubeadm init``.
 
-or using following command which will skip ca-cert verification::
+or using following command which will skip ca-cert verification:
 
-   kubeadm join --token <token> <master_ip>:6443 --discovery-token-unsafe-skip-ca-verification
+.. code-block:: bash
+
+    kubeadm join --token <token> <master_ip>:6443 --discovery-token-unsafe-skip-ca-verification
 
 After the `slave` joining the Kubernetes cluster, in the master node, you could check the cluster
-node with the command::
-   kubectl get nodes
+node with the command:
+
+.. code-block:: bash
+
+    kubectl get nodes
 
 
 Install the Calico CNI Plugin to Kubernetes Cluster
@@ -145,34 +148,39 @@ Interface(CNI) based networks for which Calico has supported.
 Install the Etcd Database
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-::
+.. code-block:: bash
 
-   kubectl apply -f https://raw.githubusercontent.com/Jingzhao123/arm64TemporaryCalico/temporay_arm64/
-   v3.3/getting-started/kubernetes/installation/hosted/etcd-arm64.yaml
+    kubectl apply -f https://raw.githubusercontent.com/Jingzhao123/arm64TemporaryCalico/temporay_arm64/v3.3/getting-started/kubernetes/installation/hosted/etcd-arm64.yaml
 
 Install the RBAC Roles required for Calico
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-::
+.. code-block:: bash
 
-   kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/rbac.yaml
+    kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/rbac.yaml
 
 Install Calico to system
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 Firstly, we should get the configuration file from web site and modify the corresponding image
 from amd64 to arm64 version. Then, by using kubectl, the calico pod will be created.
-::
-   wget https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/calico.yaml
+
+.. code-block:: bash
+
+    wget https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/calico.yaml
 
 Since the "quay.io/calico" image repo does not support does not multi-arch, we have
-to replace the “quay.io/calico” image path to "calico" which supports multi-arch.
-::
-   sed -i "s/quay.io\/calico/calico/" calico.yaml
+to replace the "quay.io/calico" image path to "calico" which supports multi-arch.
 
-Deploy the Calico using following command::
+.. code-block:: bash
 
-   kubectl apply -f calico.yaml
+    sed -i "s/quay.io\/calico/calico/" calico.yaml
+
+Deploy the Calico using following command:
+
+.. code-block:: bash
+
+    kubectl apply -f calico.yaml
 
 .. Attention::
 
@@ -187,9 +195,9 @@ Deploy the Calico using following command::
 Remove the taints on master node
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-::
+.. code-block:: bash
 
-   kubectl taint nodes --all node-role.kubernetes.io/master-
+    kubectl taint nodes --all node-role.kubernetes.io/master-
 
 
 Verification for the Work of Kubernetes
@@ -198,64 +206,19 @@ Verification for the Work of Kubernetes
 Now we can verify the work of Kubernetes and Calico with Kubernets pod and service creation and accessing
 based on Nginx which is a widely used web server.
 
-Firstly, create a file named nginx-app.yaml to describe a Pod and service by::
+Firstly, create a file named nginx-app.yaml to describe a Pod and service by:
 
-  $ cat <<EOF >~/nginx-app.yaml
-  apiVersion: v1
-  kind: Service
-  metadata:
-    name: nginx
-    labels:
-      app: nginx
-  spec:
-    type: NodePort
-    ports:
-    - port: 80
-      protocol: TCP
-      name: http
-    selector:
-      app: nginx
-  ---
-  apiVersion: v1
-  kind: ReplicationController
-  metadata:
-    name: nginx
-  spec:
-    replicas: 2
-    template:
-      metadata:
-        labels:
-          app: nginx
-      spec:
-        containers:
-        - name: nginx
-          image: nginx
-          ports:
-          - containerPort: 80
-  EOF
+.. literalinclude:: scripts/nginx.sh
+    :language: bash
+    :lines: 3-
+    :end-before: get services
 
-then test the Kubernetes working status with the script::
+then test the Kubernetes working status with the script:
 
-   set -ex
-   kubectl create -f ~/nginx-app.yaml
-   kubectl get nodes
-   kubectl get services
-   kubectl get pods
-   kubectl get rc
-   r="0"
-   while [ $r -ne "2" ]
-   do
-      r=$(kubectl get pods | grep Running | wc -l)
-      sleep 60
-   done
-   svcip=$(kubectl get services nginx  -o json | grep clusterIP | cut -f4 -d'"')
-   sleep 10
-   wget http://$svcip
-   kubectl delete -f ./examples/nginx-app.yaml
-   kubectl delete -f ./nginx-app.yaml
-   kubectl get rc
-   kubectl get pods
-   kubectl get services
+.. literalinclude:: scripts/nginx.sh
+    :language: bash
+    :lines: 6-
+    :start-after: EOF
 
 .. _Helm: https://github.com/helm/helm
 
@@ -263,13 +226,11 @@ Helm Install on Arm64
 ---------------------
 
 Helm_ is a tool for managing Kubernetes charts. Charts are packages of pre-configured
-Kubernetes resources. The installation of Helm on arm64 is as followes::
+Kubernetes resources. The installation of Helm on arm64 is as follows:
 
-   wget https://storage.googleapis.com/kubernetes-helm/helm-v2.12.3-linux-arm64.tar.gz
-   xvf helm-v2.12.3-linux-arm64.tar.gz
-   sudo cp linux-arm64/helm /usr/bin
-   sudo cp linux-arm64/tiller /usr/bin
-
+.. literalinclude:: scripts/helm.sh
+    :language: bash
+    :lines: 3-
 
 Further Information
 -------------------
