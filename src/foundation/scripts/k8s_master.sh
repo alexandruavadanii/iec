@@ -10,9 +10,6 @@ if [ -z "${MGMT_IP}" ]; then
   exit 1
 fi
 
-#Add extra flags to Kubelet
-sed '/Environment=\"KUBELET_CONFIG_ARGS/a\Environment=\"KUBELET_EXTRA_ARGS=--fail-swap-on=false --feature-gates HugePages=false\"' -i /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
-
 if ! kubectl get nodes; then
   sudo kubeadm config images pull
   sudo kubeadm init \
