@@ -1,0 +1,120 @@
+##############################################################################
+# Copyright (c) 2019 Enea AB and others.
+# All rights reserved. This program and the accompanying materials
+# are made available under the terms of the Apache License, Version 2.0
+# which accompanies this distribution, and is available at
+# http://www.apache.org/licenses/LICENSE-2.0
+##############################################################################
+---
+### ubuntu1604-dev-48c-256g-2 pod descriptor file ###
+
+version: 1.0
+details:
+  pod_owner: ENEA AB
+  contact: armband@enea.com
+  lab: ENEA lab
+  location: Stockholm, Sweden
+  type: production
+  link: https://wiki.akraino.org/display/AK/IEC+Internal+Verification+and+Validation+Lab+Setup
+##############################################################################
+jumphost:
+  name: ubuntu1604-dev-48c-256g-2
+  node:
+    type: baremetal
+    vendor: Cavium
+    model: ThunderX
+    arch: aarch64
+    cpus: 1
+    cpu_cflags: fp asimd evtstrm aes pmull sha1 sha2 crc32
+    cores: 48
+    memory: 128G
+  disks:
+    - name: disk1
+      disk_capacity: 500G
+      disk_type: ssd
+      disk_interface: sata
+      disk_rotation: 0
+    - name: disk2
+      disk_capacity: 2T
+      disk_type: hdd
+      disk_interface: sata
+      disk_rotation: 7200
+  os: ubuntu-16.04
+  remote_params: &remote_params
+    type: ipmi
+    versions:
+      - 2.0
+    user: ADMIN
+    pass: ADMIN
+  remote_management:
+    <<: *remote_params
+    address: 10.0.19.6
+    mac_address: "00:00:00:00:00:00"
+  interfaces:
+    # Connected, used only for admin/PXE, enP5p144s0
+    - mac_address: "00:00:00:00:00:00"
+      speed: 1gb
+      features: 'dpdk|sriov'
+      name: 'nic1'
+    # Connected, used for public VLAN, enP2p1s0f1
+    - mac_address: "00:00:00:00:00:00"
+      speed: 10gb
+      features: 'dpdk|sriov'
+      name: 'nic2'
+##############################################################################
+nodes:
+  - name: node-1
+    node: &nodeparams
+      # Fuel overrides certain params (e.g. cpus, mem) based on node role later
+      type: virtual
+      vendor: libvirt
+      model: virt
+      arch: aarch64
+      cpus: 1
+      cpu_cflags: fp asimd evtstrm aes pmull sha1 sha2 crc32 cpuid
+      cores: 8
+      memory: 6G
+    disks: &disks
+      - name: 'disk1'
+        disk_capacity: 100G
+        disk_type: hdd
+        disk_interface: scsi  # virtio-scsi
+        disk_rotation: 7200
+    remote_management: &remotemgmt
+      type: libvirt
+      user: changeme
+      pass: changeme
+      address: 'qemu:///system'
+    interfaces: &interfaces
+      - name: 'nic1'
+        speed: 10gb
+        features: 'dpdk|sriov'
+        mac_address: "00:00:00:00:00:00"  # MACs will be assigned by libvirt
+        vlan: native
+      - name: 'nic2'
+        speed: 10gb
+        features: 'dpdk|sriov'
+        mac_address: "00:00:00:00:00:00"
+        vlan: native
+      - name: 'nic3'
+        speed: 10gb
+        features: 'dpdk|sriov'
+        mac_address: "00:00:00:00:00:00"
+        vlan: native
+      - name: 'nic4'
+        speed: 10gb
+        features: 'dpdk|sriov'
+        mac_address: "00:00:00:00:00:00"
+        vlan: native
+  ############################################################################
+  - name: node-2
+    node: *nodeparams
+    disks: *disks
+    remote_management: *remotemgmt
+    interfaces: *interfaces
+  ############################################################################
+  - name: node-3
+    node: *nodeparams
+    disks: *disks
+    remote_management: *remotemgmt
+    interfaces: *interfaces
