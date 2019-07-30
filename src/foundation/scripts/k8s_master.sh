@@ -4,6 +4,7 @@
 MGMT_IP=$1
 POD_NETWORK_CIDR=${2:-192.168.0.0/16}
 SERVICE_CIDR=${3:-172.16.1.0/24}
+KUBEADM_CFG="$(dirname "$0")/kubeadm.yaml"
 
 if [ -z "${MGMT_IP}" ]; then
   echo "Please specify a management IP!"
@@ -12,10 +13,8 @@ fi
 
 if ! kubectl get nodes; then
   sudo kubeadm config images pull
-  sudo kubeadm init \
-    --pod-network-cidr="${POD_NETWORK_CIDR}" \
-    --apiserver-advertise-address="${MGMT_IP}" \
-    --service-cidr="${SERVICE_CIDR}"
+  envsubst < "${KUBEADM_CFG}.tmpl" > "${KUBEADM_CFG}"
+  sudo kubeadm init --config "${KUBEADM_CFG}"
 
   if [ "$(id -u)" = 0 ]; then
     echo "export KUBECONFIG=/etc/kubernetes/admin.conf" | \

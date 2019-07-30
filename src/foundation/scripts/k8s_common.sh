@@ -9,7 +9,7 @@ fi
 case ${OS_ID_LIKE:-} in
 debian)
   DOCKER_VERSION=18.06.1~ce~3-0~ubuntu
-  KUBE_VERSION=1.13.0-00
+  KUBE_VERSION=1.15.1-00
   K8S_CNI_VERSION=0.7.5-00
   KUBELET_CFG=/etc/default/kubelet
   ;;
@@ -88,10 +88,6 @@ EOF
 esac
 
 # Add extra flags to Kubelet
-if ! grep -q -e 'fail-swap-on' $KUBELET_CFG; then
-  sudo sed 's/KUBELET_EXTRA_ARGS=/KUBELET_EXTRA_ARGS=--fail-swap-on=false/' -i $KUBELET_CFG
-fi
-
 sudo systemctl enable docker kubelet
 sudo systemctl restart docker kubelet
 
