@@ -89,7 +89,7 @@ esac
 
 # Add extra flags to Kubelet
 if ! grep -q -e 'fail-swap-on' $KUBELET_CFG; then
-  sudo sed 's/KUBELET_EXTRA_ARGS=/KUBELET_EXTRA_ARGS=--fail-swap-on=false --feature-gates HugePages=false/' -i $KUBELET_CFG
+  sudo sed 's/KUBELET_EXTRA_ARGS=/KUBELET_EXTRA_ARGS=--fail-swap-on=false/' -i $KUBELET_CFG
 fi
 
 sudo systemctl enable docker kubelet
