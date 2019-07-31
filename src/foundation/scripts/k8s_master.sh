@@ -6,6 +6,8 @@ POD_NETWORK_CIDR=${2:-192.168.0.0/16}
 SERVICE_CIDR=${3:-172.16.1.0/24}
 KUBEADM_CFG="$(dirname "$0")/kubeadm.yaml"
 
+export MGMT_IP POD_NETWORK_CIDR SERVICE_CIDR
+
 if [ -z "${MGMT_IP}" ]; then
   echo "Please specify a management IP!"
   exit 1
